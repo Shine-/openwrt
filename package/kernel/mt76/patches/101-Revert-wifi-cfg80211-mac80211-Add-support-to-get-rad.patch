@@ -1,0 +1,412 @@
+From e0ba787de320787059f07e83dba7346114227521 Mon Sep 17 00:00:00 2001
+From: Shine <4c.fce2@proton.me>
+Date: Thu, 5 Feb 2026 10:49:47 +0100
+Subject: [PATCH] Revert "wifi: cfg80211/mac80211: Add support to get radio
+ index"
+
+This reverts commit 3c232526a0cd8d461538f43b0e40844961830806.
+---
+ mac80211.c        |  3 +--
+ mt76.h            |  3 +--
+ mt7603/main.c     |  5 ++---
+ mt7615/main.c     | 11 ++++-------
+ mt76x0/main.c     |  2 +-
+ mt76x0/mt76x0.h   |  2 +-
+ mt76x02.h         |  4 ++--
+ mt76x02_util.c    |  4 ++--
+ mt76x2/pci_main.c |  6 +++---
+ mt76x2/usb_main.c |  2 +-
+ mt7915/main.c     | 13 +++++--------
+ mt7921/main.c     |  8 +++-----
+ mt7925/main.c     |  8 +++-----
+ mt792x.h          |  3 +--
+ mt792x_core.c     |  3 +--
+ mt7996/main.c     | 11 ++++-------
+ 16 files changed, 35 insertions(+), 53 deletions(-)
+
+diff --git a/mac80211.c b/mac80211.c
+index d0c52290..446277a9 100644
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -1952,8 +1952,7 @@ void mt76_sw_scan_complete(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
+ }
+ EXPORT_SYMBOL_GPL(mt76_sw_scan_complete);
+ 
+-int mt76_get_antenna(struct ieee80211_hw *hw, int radio_idx, u32 *tx_ant,
+-		     u32 *rx_ant)
++int mt76_get_antenna(struct ieee80211_hw *hw, u32 *tx_ant, u32 *rx_ant)
+ {
+ 	struct mt76_phy *phy = hw->priv;
+ 	struct mt76_dev *dev = phy->dev;
+diff --git a/mt76.h b/mt76.h
+index df66b70b..8ec03480 100644
+--- a/mt76.h
++++ b/mt76.h
+@@ -1601,8 +1601,7 @@ int mt76_get_sar_power(struct mt76_phy *phy,
+ void mt76_csa_check(struct mt76_dev *dev);
+ void mt76_csa_finish(struct mt76_dev *dev);
+ 
+-int mt76_get_antenna(struct ieee80211_hw *hw, int radio_idx, u32 *tx_ant,
+-		     u32 *rx_ant);
++int mt76_get_antenna(struct ieee80211_hw *hw, u32 *tx_ant, u32 *rx_ant);
+ int mt76_set_tim(struct ieee80211_hw *hw, struct ieee80211_sta *sta, bool set);
+ void mt76_insert_ccmp_hdr(struct sk_buff *skb, u8 key_id);
+ int mt76_get_rate(struct mt76_dev *dev,
+diff --git a/mt7603/main.c b/mt7603/main.c
+index 0f3a7508..a3e825cc 100644
+--- a/mt7603/main.c
++++ b/mt7603/main.c
+@@ -216,7 +216,7 @@ static int mt7603_set_sar_specs(struct ieee80211_hw *hw,
+ }
+ 
+ static int
+-mt7603_config(struct ieee80211_hw *hw, int radio_idx, u32 changed)
++mt7603_config(struct ieee80211_hw *hw, u32 changed)
+ {
+ 	struct mt7603_dev *dev = hw->priv;
+ 	int ret = 0;
+@@ -657,8 +657,7 @@ mt7603_sta_rate_tbl_update(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ }
+ 
+ static void
+-mt7603_set_coverage_class(struct ieee80211_hw *hw, int radio_idx,
+-			  s16 coverage_class)
++mt7603_set_coverage_class(struct ieee80211_hw *hw, s16 coverage_class)
+ {
+ 	struct mt7603_dev *dev = hw->priv;
+ 
+diff --git a/mt7615/main.c b/mt7615/main.c
+index fc619acb..0936f27b 100644
+--- a/mt7615/main.c
++++ b/mt7615/main.c
+@@ -420,7 +420,7 @@ static int mt7615_set_sar_specs(struct ieee80211_hw *hw,
+ 	return mt76_update_channel(phy->mt76);
+ }
+ 
+-static int mt7615_config(struct ieee80211_hw *hw, int radio_idx, u32 changed)
++static int mt7615_config(struct ieee80211_hw *hw, u32 changed)
+ {
+ 	struct mt7615_dev *dev = mt7615_hw_dev(hw);
+ 	struct mt7615_phy *phy = mt7615_hw_phy(hw);
+@@ -785,8 +785,7 @@ static void mt7615_tx(struct ieee80211_hw *hw,
+ 	mt76_connac_pm_queue_skb(hw, &dev->pm, wcid, skb);
+ }
+ 
+-static int mt7615_set_rts_threshold(struct ieee80211_hw *hw, int radio_idx,
+-				    u32 val)
++static int mt7615_set_rts_threshold(struct ieee80211_hw *hw, u32 val)
+ {
+ 	struct mt7615_dev *dev = mt7615_hw_dev(hw);
+ 	struct mt7615_phy *phy = mt7615_hw_phy(hw);
+@@ -974,8 +973,7 @@ mt7615_offset_tsf(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ }
+ 
+ static void
+-mt7615_set_coverage_class(struct ieee80211_hw *hw, int radio_idx,
+-			  s16 coverage_class)
++mt7615_set_coverage_class(struct ieee80211_hw *hw, s16 coverage_class)
+ {
+ 	struct mt7615_phy *phy = mt7615_hw_phy(hw);
+ 	struct mt7615_dev *dev = phy->dev;
+@@ -987,8 +985,7 @@ mt7615_set_coverage_class(struct ieee80211_hw *hw, int radio_idx,
+ }
+ 
+ static int
+-mt7615_set_antenna(struct ieee80211_hw *hw, int radio_idx,
+-		   u32 tx_ant, u32 rx_ant)
++mt7615_set_antenna(struct ieee80211_hw *hw, u32 tx_ant, u32 rx_ant)
+ {
+ 	struct mt7615_dev *dev = mt7615_hw_dev(hw);
+ 	struct mt7615_phy *phy = mt7615_hw_phy(hw);
+diff --git a/mt76x0/main.c b/mt76x0/main.c
+index a5c40d35..4aa2dced 100644
+--- a/mt76x0/main.c
++++ b/mt76x0/main.c
+@@ -57,7 +57,7 @@ out:
+ }
+ EXPORT_SYMBOL_GPL(mt76x0_set_sar_specs);
+ 
+-int mt76x0_config(struct ieee80211_hw *hw, int radio_idx, u32 changed)
++int mt76x0_config(struct ieee80211_hw *hw, u32 changed)
+ {
+ 	struct mt76x02_dev *dev = hw->priv;
+ 
+diff --git a/mt76x0/mt76x0.h b/mt76x0/mt76x0.h
+index e5bc14d4..50f75534 100644
+--- a/mt76x0/mt76x0.h
++++ b/mt76x0/mt76x0.h
+@@ -48,7 +48,7 @@ void mt76x0_chip_onoff(struct mt76x02_dev *dev, bool enable, bool reset);
+ 
+ void mt76x0_mac_stop(struct mt76x02_dev *dev);
+ 
+-int mt76x0_config(struct ieee80211_hw *hw, int radio_idx, u32 changed);
++int mt76x0_config(struct ieee80211_hw *hw, u32 changed);
+ int mt76x0_set_channel(struct mt76_phy *mphy);
+ int mt76x0_set_sar_specs(struct ieee80211_hw *hw,
+ 			 const struct cfg80211_sar_specs *sar);
+diff --git a/mt76x02.h b/mt76x02.h
+index 3c98808c..eadecf13 100644
+--- a/mt76x02.h
++++ b/mt76x02.h
+@@ -183,8 +183,8 @@ void mt76x02_wdt_work(struct work_struct *work);
+ void mt76x02_tx_set_txpwr_auto(struct mt76x02_dev *dev, s8 txpwr);
+ void mt76x02_set_tx_ackto(struct mt76x02_dev *dev);
+ void mt76x02_set_coverage_class(struct ieee80211_hw *hw,
+-				int radio_idx, s16 coverage_class);
+-int mt76x02_set_rts_threshold(struct ieee80211_hw *hw, int radio_idx, u32 val);
++				s16 coverage_class);
++int mt76x02_set_rts_threshold(struct ieee80211_hw *hw, u32 val);
+ void mt76x02_remove_hdr_pad(struct sk_buff *skb, int len);
+ bool mt76x02_tx_status_data(struct mt76_dev *mdev, u8 *update);
+ void mt76x02_queue_rx_skb(struct mt76_dev *mdev, enum mt76_rxq_id q,
+diff --git a/mt76x02_util.c b/mt76x02_util.c
+index e5d9d1bc..7dc9a141 100644
+--- a/mt76x02_util.c
++++ b/mt76x02_util.c
+@@ -548,7 +548,7 @@ void mt76x02_set_tx_ackto(struct mt76x02_dev *dev)
+ EXPORT_SYMBOL_GPL(mt76x02_set_tx_ackto);
+ 
+ void mt76x02_set_coverage_class(struct ieee80211_hw *hw,
+-				int radio_idx, s16 coverage_class)
++				s16 coverage_class)
+ {
+ 	struct mt76x02_dev *dev = hw->priv;
+ 
+@@ -559,7 +559,7 @@ void mt76x02_set_coverage_class(struct ieee80211_hw *hw,
+ }
+ EXPORT_SYMBOL_GPL(mt76x02_set_coverage_class);
+ 
+-int mt76x02_set_rts_threshold(struct ieee80211_hw *hw, int radio_idx, u32 val)
++int mt76x02_set_rts_threshold(struct ieee80211_hw *hw, u32 val)
+ {
+ 	struct mt76x02_dev *dev = hw->priv;
+ 
+diff --git a/mt76x2/pci_main.c b/mt76x2/pci_main.c
+index 55064467..4033abd6 100644
+--- a/mt76x2/pci_main.c
++++ b/mt76x2/pci_main.c
+@@ -54,7 +54,7 @@ int mt76x2e_set_channel(struct mt76_phy *phy)
+ }
+ 
+ static int
+-mt76x2_config(struct ieee80211_hw *hw, int radio_idx, u32 changed)
++mt76x2_config(struct ieee80211_hw *hw, u32 changed)
+ {
+ 	struct mt76x02_dev *dev = hw->priv;
+ 
+@@ -99,8 +99,8 @@ mt76x2_flush(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ {
+ }
+ 
+-static int mt76x2_set_antenna(struct ieee80211_hw *hw, int radio_idx,
+-			      u32 tx_ant, u32 rx_ant)
++static int mt76x2_set_antenna(struct ieee80211_hw *hw, u32 tx_ant,
++			      u32 rx_ant)
+ {
+ 	struct mt76x02_dev *dev = hw->priv;
+ 
+diff --git a/mt76x2/usb_main.c b/mt76x2/usb_main.c
+index 66b06a49..c21fb37f 100644
+--- a/mt76x2/usb_main.c
++++ b/mt76x2/usb_main.c
+@@ -50,7 +50,7 @@ int mt76x2u_set_channel(struct mt76_phy *mphy)
+ }
+ 
+ static int
+-mt76x2u_config(struct ieee80211_hw *hw, int radio_idx, u32 changed)
++mt76x2u_config(struct ieee80211_hw *hw, u32 changed)
+ {
+ 	struct mt76x02_dev *dev = hw->priv;
+ 	int err = 0;
+diff --git a/mt7915/main.c b/mt7915/main.c
+index ea4d3e21..00b1440e 100644
+--- a/mt7915/main.c
++++ b/mt7915/main.c
+@@ -449,8 +449,7 @@ out:
+ 	return err;
+ }
+ 
+-static int mt7915_config(struct ieee80211_hw *hw, int radio_idx,
+-			 u32 changed)
++static int mt7915_config(struct ieee80211_hw *hw, u32 changed)
+ {
+ 	struct mt7915_dev *dev = mt7915_hw_dev(hw);
+ 	struct mt7915_phy *phy = mt7915_hw_phy(hw);
+@@ -915,8 +914,7 @@ static void mt7915_tx(struct ieee80211_hw *hw,
+ 	mt76_tx(mphy, control->sta, wcid, skb);
+ }
+ 
+-static int mt7915_set_rts_threshold(struct ieee80211_hw *hw, int radio_idx,
+-				    u32 val)
++static int mt7915_set_rts_threshold(struct ieee80211_hw *hw, u32 val)
+ {
+ 	struct mt7915_dev *dev = mt7915_hw_dev(hw);
+ 	struct mt7915_phy *phy = mt7915_hw_phy(hw);
+@@ -1112,8 +1110,7 @@ mt7915_offset_tsf(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ }
+ 
+ static void
+-mt7915_set_coverage_class(struct ieee80211_hw *hw, int radio_idx,
+-			  s16 coverage_class)
++mt7915_set_coverage_class(struct ieee80211_hw *hw, s16 coverage_class)
+ {
+ 	struct mt7915_phy *phy = mt7915_hw_phy(hw);
+ 	struct mt7915_dev *dev = phy->dev;
+@@ -1125,7 +1122,7 @@ mt7915_set_coverage_class(struct ieee80211_hw *hw, int radio_idx,
+ }
+ 
+ static int
+-mt7915_set_antenna(struct ieee80211_hw *hw, int radio_idx, u32 tx_ant, u32 rx_ant)
++mt7915_set_antenna(struct ieee80211_hw *hw, u32 tx_ant, u32 rx_ant)
+ {
+ 	struct mt7915_dev *dev = mt7915_hw_dev(hw);
+ 	struct mt7915_phy *phy = mt7915_hw_phy(hw);
+@@ -1703,7 +1700,7 @@ mt7915_twt_teardown_request(struct ieee80211_hw *hw,
+ }
+ 
+ static int
+-mt7915_set_frag_threshold(struct ieee80211_hw *hw, int radio_idx, u32 val)
++mt7915_set_frag_threshold(struct ieee80211_hw *hw, u32 val)
+ {
+ 	return 0;
+ }
+diff --git a/mt7921/main.c b/mt7921/main.c
+index f37a35b9..f1099387 100644
+--- a/mt7921/main.c
++++ b/mt7921/main.c
+@@ -630,7 +630,7 @@ void mt7921_set_runtime_pm(struct mt792x_dev *dev)
+ 	mt76_connac_mcu_set_deep_sleep(&dev->mt76, pm->ds_enable);
+ }
+ 
+-static int mt7921_config(struct ieee80211_hw *hw, int radio_idx, u32 changed)
++static int mt7921_config(struct ieee80211_hw *hw, u32 changed)
+ {
+ 	struct mt792x_dev *dev = mt792x_hw_dev(hw);
+ 	struct mt792x_phy *phy = mt792x_hw_phy(hw);
+@@ -919,8 +919,7 @@ void mt7921_mac_sta_remove(struct mt76_dev *mdev, struct ieee80211_vif *vif,
+ }
+ EXPORT_SYMBOL_GPL(mt7921_mac_sta_remove);
+ 
+-static int mt7921_set_rts_threshold(struct ieee80211_hw *hw, int radio_idx,
+-				    u32 val)
++static int mt7921_set_rts_threshold(struct ieee80211_hw *hw, u32 val)
+ {
+ 	struct mt792x_dev *dev = mt792x_hw_dev(hw);
+ 
+@@ -1101,8 +1100,7 @@ mt7921_stop_sched_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
+ }
+ 
+ static int
+-mt7921_set_antenna(struct ieee80211_hw *hw, int radio_idx,
+-		   u32 tx_ant, u32 rx_ant)
++mt7921_set_antenna(struct ieee80211_hw *hw, u32 tx_ant, u32 rx_ant)
+ {
+ 	struct mt792x_dev *dev = mt792x_hw_dev(hw);
+ 	struct mt792x_phy *phy = mt792x_hw_phy(hw);
+diff --git a/mt7925/main.c b/mt7925/main.c
+index afcc0fa4..3f7a2a0c 100644
+--- a/mt7925/main.c
++++ b/mt7925/main.c
+@@ -766,7 +766,7 @@ void mt7925_set_runtime_pm(struct mt792x_dev *dev)
+ 	mt7925_mcu_set_deep_sleep(dev, pm->ds_enable);
+ }
+ 
+-static int mt7925_config(struct ieee80211_hw *hw, int radio_idx, u32 changed)
++static int mt7925_config(struct ieee80211_hw *hw, u32 changed)
+ {
+ 	struct mt792x_dev *dev = mt792x_hw_dev(hw);
+ 	int ret = 0;
+@@ -1227,8 +1227,7 @@ void mt7925_mac_sta_remove(struct mt76_dev *mdev, struct ieee80211_vif *vif,
+ }
+ EXPORT_SYMBOL_GPL(mt7925_mac_sta_remove);
+ 
+-static int mt7925_set_rts_threshold(struct ieee80211_hw *hw, int radio_idx,
+-				    u32 val)
++static int mt7925_set_rts_threshold(struct ieee80211_hw *hw, u32 val)
+ {
+ 	struct mt792x_dev *dev = mt792x_hw_dev(hw);
+ 
+@@ -1455,8 +1454,7 @@ mt7925_stop_sched_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
+ }
+ 
+ static int
+-mt7925_set_antenna(struct ieee80211_hw *hw, int radio_idx,
+-		   u32 tx_ant, u32 rx_ant)
++mt7925_set_antenna(struct ieee80211_hw *hw, u32 tx_ant, u32 rx_ant)
+ {
+ 	struct mt792x_dev *dev = mt792x_hw_dev(hw);
+ 	struct mt792x_phy *phy = mt792x_hw_phy(hw);
+diff --git a/mt792x.h b/mt792x.h
+index 8388638e..2eeefc8e 100644
+--- a/mt792x.h
++++ b/mt792x.h
+@@ -413,8 +413,7 @@ void mt792x_sta_statistics(struct ieee80211_hw *hw,
+ 			   struct ieee80211_vif *vif,
+ 			   struct ieee80211_sta *sta,
+ 			   struct station_info *sinfo);
+-void mt792x_set_coverage_class(struct ieee80211_hw *hw, int radio_idx,
+-			       s16 coverage_class);
++void mt792x_set_coverage_class(struct ieee80211_hw *hw, s16 coverage_class);
+ void mt792x_dma_cleanup(struct mt792x_dev *dev);
+ int mt792x_dma_enable(struct mt792x_dev *dev);
+ int mt792x_wpdma_reset(struct mt792x_dev *dev, bool force);
+diff --git a/mt792x_core.c b/mt792x_core.c
+index f318a53e..d049f469 100644
+--- a/mt792x_core.c
++++ b/mt792x_core.c
+@@ -601,8 +601,7 @@ void mt792x_sta_statistics(struct ieee80211_hw *hw,
+ }
+ EXPORT_SYMBOL_GPL(mt792x_sta_statistics);
+ 
+-void mt792x_set_coverage_class(struct ieee80211_hw *hw, int radio_idx,
+-			       s16 coverage_class)
++void mt792x_set_coverage_class(struct ieee80211_hw *hw, s16 coverage_class)
+ {
+ 	struct mt792x_phy *phy = mt792x_hw_phy(hw);
+ 	struct mt792x_dev *dev = phy->dev;
+diff --git a/mt7996/main.c b/mt7996/main.c
+index a9b988b8..85a40514 100644
+--- a/mt7996/main.c
++++ b/mt7996/main.c
+@@ -660,7 +660,7 @@ static int mt7996_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
+ 	return err;
+ }
+ 
+-static int mt7996_config(struct ieee80211_hw *hw, int radio_idx, u32 changed)
++static int mt7996_config(struct ieee80211_hw *hw, u32 changed)
+ {
+ 	return 0;
+ }
+@@ -1467,8 +1467,7 @@ unlock:
+ 	rcu_read_unlock();
+ }
+ 
+-static int mt7996_set_rts_threshold(struct ieee80211_hw *hw, int radio_idx,
+-				    u32 val)
++static int mt7996_set_rts_threshold(struct ieee80211_hw *hw, u32 val)
+ {
+ 	struct mt7996_dev *dev = mt7996_hw_dev(hw);
+ 	int i, ret = 0;
+@@ -1688,8 +1687,7 @@ unlock:
+ }
+ 
+ static void
+-mt7996_set_coverage_class(struct ieee80211_hw *hw, int radio_idx,
+-			  s16 coverage_class)
++mt7996_set_coverage_class(struct ieee80211_hw *hw, s16 coverage_class)
+ {
+ 	struct mt7996_dev *dev = mt7996_hw_dev(hw);
+ 	struct mt7996_phy *phy;
+@@ -1703,8 +1701,7 @@ mt7996_set_coverage_class(struct ieee80211_hw *hw, int radio_idx,
+ }
+ 
+ static int
+-mt7996_set_antenna(struct ieee80211_hw *hw, int radio_idx,
+-		   u32 tx_ant, u32 rx_ant)
++mt7996_set_antenna(struct ieee80211_hw *hw, u32 tx_ant, u32 rx_ant)
+ {
+ 	struct mt7996_dev *dev = mt7996_hw_dev(hw);
+ 	int i;
+-- 
+2.39.5
+

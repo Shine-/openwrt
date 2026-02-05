@@ -1,0 +1,50 @@
+From 1a212daca48b5cee1bf52b9cd952caf14dcda861 Mon Sep 17 00:00:00 2001
+From: Shine <4c.fce2@proton.me>
+Date: Thu, 5 Feb 2026 11:18:12 +0100
+Subject: [PATCH] Revert "treewide, timers: Rename from_timer() to
+ timer_container_of()"
+
+This reverts commit cfbbb8e66a7920efbb69e7a03887079c0ca292a3.
+---
+ mt7615/main.c | 2 +-
+ mt792x_core.c | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/mt7615/main.c b/mt7615/main.c
+index 0936f27b..4a7370a0 100644
+--- a/mt7615/main.c
++++ b/mt7615/main.c
+@@ -1044,7 +1044,7 @@ void mt7615_roc_work(struct work_struct *work)
+ 
+ void mt7615_roc_timer(struct timer_list *timer)
+ {
+-	struct mt7615_phy *phy = timer_container_of(phy, timer, roc_timer);
++	struct mt7615_phy *phy = from_timer(phy, timer, roc_timer);
+ 
+ 	ieee80211_queue_work(phy->mt76->hw, &phy->roc_work);
+ }
+diff --git a/mt792x_core.c b/mt792x_core.c
+index d049f469..444fa3e2 100644
+--- a/mt792x_core.c
++++ b/mt792x_core.c
+@@ -305,7 +305,7 @@ EXPORT_SYMBOL_GPL(mt792x_tx_worker);
+ 
+ void mt792x_roc_timer(struct timer_list *timer)
+ {
+-	struct mt792x_phy *phy = timer_container_of(phy, timer, roc_timer);
++	struct mt792x_phy *phy = from_timer(phy, timer, roc_timer);
+ 
+ 	ieee80211_queue_work(phy->mt76->hw, &phy->roc_work);
+ }
+@@ -313,7 +313,7 @@ EXPORT_SYMBOL_GPL(mt792x_roc_timer);
+ 
+ void mt792x_csa_timer(struct timer_list *timer)
+ {
+-	struct mt792x_vif *mvif = timer_container_of(mvif, timer, csa_timer);
++	struct mt792x_vif *mvif = from_timer(mvif, timer, csa_timer);
+ 
+ 	ieee80211_queue_work(mvif->phy->mt76->hw, &mvif->csa_work);
+ }
+-- 
+2.39.5
+

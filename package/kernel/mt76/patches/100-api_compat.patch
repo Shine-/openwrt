@@ -55,13 +55,13 @@
  
  	rcu_read_lock();
  
--	msta_link = rcu_dereference(msta->link[link_sta->link_id]);
+-	msta_link = mt7996_sta_link(msta, link_sta->link_id);
 -	if (msta_link) {
 -		struct mt7996_dev *dev = mt7996_hw_dev(hw);
 +	for_each_sta_active_link(vif, sta, link_sta, link_id) {
 +		struct mt7996_sta_link *msta_link;
 +
-+		msta_link = rcu_dereference(msta->link[link_sta->link_id]);
++		msta_link = mt7996_sta_link(msta, link_sta->link_id);
 +		if (!msta_link)
 +			continue;
  
